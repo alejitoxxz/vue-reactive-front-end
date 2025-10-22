@@ -1,9 +1,10 @@
 const rawBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const isDev = typeof import.meta !== 'undefined' ? Boolean(import.meta.env?.DEV) : false;
 
 function sanitizeBase(url) {
   if (!url) return '';
   try {
-    const normalized = new URL(url, window.location.origin);
+    const normalized = new URL(url, typeof window !== 'undefined' ? window.location.origin : undefined);
     return normalized.origin + normalized.pathname.replace(/\/$/, '');
   } catch (err) {
     console.warn('[config] URL de API inválida, usando el valor por defecto', err);
@@ -14,12 +15,16 @@ function sanitizeBase(url) {
 const providedBase = sanitizeBase(rawBaseUrl);
 
 let fallbackBase = '';
-if (typeof window !== 'undefined' && window.location) {
-  const { origin } = window.location;
-  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-    fallbackBase = 'http://localhost:8080';
-  } else {
-    fallbackBase = origin;
+if (!providedBase) {
+  if (isDev) {
+    fallbackBase = '';
+  } else if (typeof window !== 'undefined' && window.location) {
+    const { origin } = window.location;
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      fallbackBase = 'http://localhost:8080';
+    } else {
+      fallbackBase = origin;
+    }
   }
 }
 
