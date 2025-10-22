@@ -1,4 +1,6 @@
-export const API_BASE = 'http://localhost:8080/api/v1/countries';
+import { COUNTRIES_ENDPOINT } from '../config';
+
+export const API_BASE = COUNTRIES_ENDPOINT;
 
 export function subscribeToCountryEvents(onMessage, { onError, onOpen } = {}) {
   const eventSource = new EventSource(`${API_BASE}/events`, {

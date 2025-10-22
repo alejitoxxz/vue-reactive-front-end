@@ -31,8 +31,9 @@
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
-                <th>Código</th>
-                <th>Capital</th>
+                <th>Código telefónico</th>
+                <th>Código ISO</th>
+                <th>Estado</th>
                 <th class="data-table__actions">Acciones</th>
               </tr>
             </thead>
@@ -40,8 +41,9 @@
               <tr v-for="country in countries" :key="country.id">
                 <td>{{ country.id }}</td>
                 <td>{{ country.name ?? '—' }}</td>
-                <td>{{ country.code ?? country.isoCode ?? '—' }}</td>
-                <td>{{ country.capital ?? '—' }}</td>
+                <td>{{ country.dialingCountryCode ?? country.dialingCode ?? '—' }}</td>
+                <td>{{ country.isoCountryCode ?? country.isoCode ?? '—' }}</td>
+                <td>{{ country.enabled === false ? 'Inactivo' : 'Activo' }}</td>
                 <td class="data-table__actions">
                   <button type="button" class="link" @click="removeCountry(country.id)">
                     Eliminar
@@ -58,26 +60,30 @@
       </section>
 
       <section class="panel form-panel">
-        <h2>Crear nuevo país</h2>
+        <h2>Crear o habilitar país</h2>
         <form class="form" @submit.prevent="submit">
           <label class="form__field">
             <span>Nombre</span>
             <input v-model="form.name" type="text" placeholder="México" required />
           </label>
           <label class="form__field">
-            <span>Código</span>
-            <input v-model="form.code" type="text" placeholder="MX" required />
+            <span>Código telefónico</span>
+            <input v-model="form.dialingCountryCode" type="text" placeholder="+52" required />
           </label>
           <label class="form__field">
-            <span>Capital</span>
-            <input v-model="form.capital" type="text" placeholder="Ciudad de México" />
+            <span>Código ISO</span>
+            <input v-model="form.isoCountryCode" type="text" placeholder="MX" maxlength="3" required />
+          </label>
+          <label class="form__field form__field--checkbox">
+            <input v-model="form.enabled" type="checkbox" />
+            <span>País habilitado</span>
           </label>
 
           <button class="primary" type="submit" :disabled="creating">
             {{ creating ? 'Enviando…' : 'Crear país' }}
           </button>
           <p v-if="createError" class="form__error">{{ createError }}</p>
-          <p v-if="lastCreated" class="form__success">País {{ lastCreated.name }} creado correctamente.</p>
+          <p v-if="lastCreated" class="form__success">País {{ lastCreated.name }} sincronizado correctamente.</p>
         </form>
       </section>
     </main>
@@ -102,8 +108,9 @@ let unsubscribe = null;
 
 const form = reactive({
   name: '',
-  code: '',
-  capital: '',
+  dialingCountryCode: '',
+  isoCountryCode: '',
+  enabled: true,
 });
 
 const connectionMessage = computed(() => {
@@ -131,7 +138,8 @@ async function loadCountries() {
     countries.value = Array.isArray(data) ? data : [];
   } catch (err) {
     console.error('No se pudo cargar el catálogo', err);
-    loadError.value = 'No se pudo cargar la lista de países. Verifica el backend y vuelve a intentarlo.';
+    const detail = err?.message ? ` Detalle: ${err.message}` : '';
+    loadError.value = `No se pudo cargar la lista de países. Verifica el backend y vuelve a intentarlo.${detail}`;
   } finally {
     loading.value = false;
   }
@@ -144,17 +152,23 @@ async function submit() {
   try {
     const payload = {
       name: form.name.trim(),
-      code: form.code.trim(),
-      capital: form.capital.trim() || null,
+      dialingCountryCode: form.dialingCountryCode.trim(),
+      isoCountryCode: form.isoCountryCode.trim(),
+      enabled: Boolean(form.enabled),
     };
-    if (!payload.name || !payload.code) {
+    if (!payload.name || !payload.dialingCountryCode || !payload.isoCountryCode) {
       throw new Error('Completa todos los campos obligatorios.');
     }
+    if (!payload.dialingCountryCode.startsWith('+')) {
+      payload.dialingCountryCode = `+${payload.dialingCountryCode.replace(/^\+?/, '')}`;
+    }
+    payload.isoCountryCode = payload.isoCountryCode.toUpperCase();
     const created = await createCountry(payload);
     lastCreated.value = created;
     form.name = '';
-    form.code = '';
-    form.capital = '';
+    form.dialingCountryCode = '';
+    form.isoCountryCode = '';
+    form.enabled = true;
   } catch (err) {
     console.error('No se pudo crear el país', err);
     createError.value = err?.message || 'Ocurrió un error al crear el país.';
@@ -169,7 +183,8 @@ async function removeCountry(id) {
     await deleteCountry(id);
   } catch (err) {
     console.error('No se pudo eliminar el país', err);
-    loadError.value = 'No se pudo eliminar el país. Intenta nuevamente.';
+    const detail = err?.message ? ` Detalle: ${err.message}` : '';
+    loadError.value = `No se pudo eliminar el país. Intenta nuevamente.${detail}`;
   }
 }
 
@@ -389,6 +404,18 @@ onUnmounted(() => {
 
 .panel__warning {
   margin-top: 1rem;
+}
+
+.form__field--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.form__field--checkbox input {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .table-wrapper {
