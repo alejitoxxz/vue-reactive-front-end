@@ -105,6 +105,7 @@ const connectionState = ref('connecting');
 const consecutiveErrors = ref(0);
 const errorTimeout = ref();
 let unsubscribe = null;
+let countriesRequestController;
 
 const form = reactive({
   name: '',
@@ -131,17 +132,29 @@ const showReconnectWarning = computed(
 );
 
 async function loadCountries() {
+  if (countriesRequestController) {
+    countriesRequestController.abort();
+  }
+
+  const controller = new AbortController();
+  countriesRequestController = controller;
   loading.value = true;
   loadError.value = '';
   try {
-    const data = await fetchCountries();
+    const data = await fetchCountries({ signal: controller.signal });
     countries.value = Array.isArray(data) ? data : [];
   } catch (err) {
+    if (err?.name === 'AbortError') {
+      return;
+    }
     console.error('No se pudo cargar el catálogo', err);
     const detail = err?.message ? ` Detalle: ${err.message}` : '';
     loadError.value = `No se pudo cargar la lista de países. Verifica el backend y vuelve a intentarlo.${detail}`;
   } finally {
-    loading.value = false;
+    if (countriesRequestController === controller) {
+      countriesRequestController = undefined;
+      loading.value = false;
+    }
   }
 }
 
@@ -259,6 +272,10 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  if (countriesRequestController) {
+    countriesRequestController.abort();
+    countriesRequestController = undefined;
+  }
   if (errorTimeout.value) {
     clearTimeout(errorTimeout.value);
   }
