@@ -1,14 +1,34 @@
-const API_BASE = 'http://localhost:8080/api/v1/countries';
+import { COUNTRIES_ENDPOINT } from '../config';
+
+const API_BASE = COUNTRIES_ENDPOINT;
 
 async function handleResponse(response) {
+  const payloadText = await response.text();
+
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `HTTP ${response.status}`);
+    let message = `HTTP ${response.status}`;
+
+    if (payloadText) {
+      try {
+        const data = JSON.parse(payloadText);
+        message = data?.message || data?.error || payloadText;
+      } catch (err) {
+        message = payloadText;
+      }
+    }
+
+    throw new Error(message);
   }
-  if (response.status === 204) {
+
+  if (!payloadText) {
     return null;
   }
-  return response.json();
+
+  try {
+    return JSON.parse(payloadText);
+  } catch (err) {
+    return payloadText;
+  }
 }
 
 export async function fetchCountries({ signal } = {}) {

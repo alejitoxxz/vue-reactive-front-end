@@ -1,6 +1,6 @@
 # Countries reactive frontend
 
-This demo Vue 3 + Vite application consumes the reactive countries API exposed by `http://localhost:8080/api/v1/countries`. It illustrates how to mix traditional REST requests with a Server-Sent Events (SSE) stream to keep the UI in sync in real time.
+This demo Vue 3 + Vite application consumes the reactive countries API exposed by your backend (by default `http://localhost:8080/api/v1/countries`). It illustrates how to mix traditional REST requests with a Server-Sent Events (SSE) stream to keep the UI in sync in real time.
 
 ## Getting started
 
@@ -9,10 +9,17 @@ npm install
 npm run dev
 ```
 
-By default Vite runs on [http://localhost:5173](http://localhost:5173). Open that URL in your browser while your backend is available at `http://localhost:8080`.
+By default Vite runs on [http://localhost:5173](http://localhost:5173). Open that URL in your browser while your backend is available at `http://localhost:8080` or configure a custom target by creating a `.env` file:
 
-> **Note**
-> If you need to target a different backend, edit the `API_BASE` constant defined in `src/services/countryApi.js` and `src/services/countryStream.js`.
+```env
+VITE_API_BASE_URL=http://your-backend-host:8080
+```
+
+The helper in `src/config.js` reads that value and shares it with both the REST and SSE clients. You can also set the environment variable when starting Vite:
+
+```sh
+VITE_API_BASE_URL=http://192.168.1.10:8080 npm run dev
+```
 
 ## Features
 
@@ -41,7 +48,7 @@ The client exposes two service layers:
 To test the integration you need a backend that offers the following endpoints:
 
 - `GET /api/v1/countries` → returns the current list of countries as JSON.
-- `POST /api/v1/countries` → accepts a JSON payload `{ "name": string, "code": string, "capital"?: string }` and returns the created entity.
+- `POST /api/v1/countries` → accepts a JSON payload `{ "name": string, "dialingCountryCode": string, "isoCountryCode": string, "enabled": boolean }` and returns the created entity.
 - `PUT /api/v1/countries/{id}` → updates the country identified by `id`.
 - `DELETE /api/v1/countries/{id}` → removes a country.
 - `GET /api/v1/countries/events` → exposes an SSE stream with messages shaped as `{ "countryEntity": { ... }, "event": "CREATED" | "UPDATED" | "DELETED" }`.

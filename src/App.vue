@@ -138,7 +138,8 @@ async function loadCountries() {
     countries.value = Array.isArray(data) ? data : [];
   } catch (err) {
     console.error('No se pudo cargar el catálogo', err);
-    loadError.value = 'No se pudo cargar la lista de países. Verifica el backend y vuelve a intentarlo.';
+    const detail = err?.message ? ` Detalle: ${err.message}` : '';
+    loadError.value = `No se pudo cargar la lista de países. Verifica el backend y vuelve a intentarlo.${detail}`;
   } finally {
     loading.value = false;
   }
@@ -182,7 +183,8 @@ async function removeCountry(id) {
     await deleteCountry(id);
   } catch (err) {
     console.error('No se pudo eliminar el país', err);
-    loadError.value = 'No se pudo eliminar el país. Intenta nuevamente.';
+    const detail = err?.message ? ` Detalle: ${err.message}` : '';
+    loadError.value = `No se pudo eliminar el país. Intenta nuevamente.${detail}`;
   }
 }
 
