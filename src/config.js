@@ -23,5 +23,14 @@ if (typeof window !== 'undefined' && window.location) {
   }
 }
 
-export const API_BASE_URL = providedBase || fallbackBase || 'http://localhost:8080';
-export const COUNTRIES_ENDPOINT = `${API_BASE_URL.replace(/\/$/, '')}/api/v1/countries`;
+function trimTrailingSlash(value = '') {
+  return value.replace(/\/$/, '');
+}
+
+export const API_BASE_URL = trimTrailingSlash(providedBase || fallbackBase || 'http://localhost:8080');
+
+export const API_PATHS = {
+  countries: '/api/v1/countries',
+};
+
+export const COUNTRIES_ENDPOINT = `${API_BASE_URL}${API_PATHS.countries}`;

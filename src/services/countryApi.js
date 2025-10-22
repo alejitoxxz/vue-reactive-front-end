@@ -1,69 +1,26 @@
-import { COUNTRIES_ENDPOINT } from '../config';
+import { API_PATHS, COUNTRIES_ENDPOINT } from '../config';
+import { request } from './httpClient';
 
-const API_BASE = COUNTRIES_ENDPOINT;
-
-async function handleResponse(response) {
-  const payloadText = await response.text();
-
-  if (!response.ok) {
-    let message = `HTTP ${response.status}`;
-
-    if (payloadText) {
-      try {
-        const data = JSON.parse(payloadText);
-        message = data?.message || data?.error || payloadText;
-      } catch (err) {
-        message = payloadText;
-      }
-    }
-
-    throw new Error(message);
-  }
-
-  if (!payloadText) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(payloadText);
-  } catch (err) {
-    return payloadText;
-  }
-}
+const RESOURCE_PATH = API_PATHS.countries;
 
 export async function fetchCountries({ signal } = {}) {
-  const response = await fetch(API_BASE, { signal });
-  return handleResponse(response);
+  return request(RESOURCE_PATH, { signal });
 }
 
 export async function fetchCountry(id, { signal } = {}) {
-  const response = await fetch(`${API_BASE}/${id}`, { signal });
-  return handleResponse(response);
+  return request(`${RESOURCE_PATH}/${id}`, { signal });
 }
 
 export async function createCountry(payload) {
-  const response = await fetch(API_BASE, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(response);
+  return request(RESOURCE_PATH, { method: 'POST', body: payload });
 }
 
 export async function updateCountry(id, payload) {
-  const response = await fetch(`${API_BASE}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(response);
+  return request(`${RESOURCE_PATH}/${id}`, { method: 'PUT', body: payload });
 }
 
 export async function deleteCountry(id) {
-  const response = await fetch(`${API_BASE}/${id}`, {
-    method: 'DELETE',
-  });
-  return handleResponse(response);
+  return request(`${RESOURCE_PATH}/${id}`, { method: 'DELETE' });
 }
 
-export { API_BASE };
+export const API_BASE = COUNTRIES_ENDPOINT;
