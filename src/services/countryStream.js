@@ -1,6 +1,7 @@
-import { COUNTRIES_ENDPOINT } from '../config';
+import { API_PATHS } from '../config';
+import { buildApiUrl } from './httpClient';
 
-export const API_BASE = COUNTRIES_ENDPOINT;
+export const API_BASE = buildApiUrl(API_PATHS.countries);
 
 export function subscribeToCountryEvents(onMessage, { onError, onOpen } = {}) {
   const eventSource = new EventSource(`${API_BASE}/events`, {
